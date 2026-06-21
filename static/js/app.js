@@ -30,26 +30,19 @@ function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     state.theme = savedTheme;
     document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeUI();
+    
+    // Sync the checkbox visual state
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    if (themeCheckbox) {
+        themeCheckbox.checked = (savedTheme === 'light');
+    }
 }
 
-function toggleTheme() {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+function handleThemeChange(e) {
+    state.theme = e.target.checked ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', state.theme);
     localStorage.setItem('theme', state.theme);
-    updateThemeUI();
-}
-
-function updateThemeUI() {
-    const sunIcon = document.querySelector('.icon-sun');
-    const moonIcon = document.querySelector('.icon-moon');
-    if (state.theme === 'dark') {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
-    } else {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
-    }
+    showToast(`${state.theme.charAt(0).toUpperCase() + state.theme.slice(1)} Mode activated`, 'info');
 }
 
 // Setup Event Listeners
@@ -67,8 +60,11 @@ function setupEventListeners() {
     // Export CSV Button
     document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
 
-    // Theme Toggle Button
-    document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
+    // Theme Toggle Switch
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    if (themeCheckbox) {
+        themeCheckbox.addEventListener('change', handleThemeChange);
+    }
 
     // Search Input with clear button and enter/escape actions
     const searchInput = document.getElementById('search-input');
