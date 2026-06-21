@@ -64,6 +64,9 @@ function setupEventListeners() {
         fetchReleaseNotes(true);
     });
 
+    // Export CSV Button
+    document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
+
     // Theme Toggle Button
     document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
 
@@ -350,6 +353,13 @@ function renderUpdatesList() {
                     <time class="card-date" datetime="${update.iso_date}">${update.date}</time>
                 </div>
                 <div class="card-actions-right">
+                    <!-- Copy to Clipboard button -->
+                    <button class="btn-card-copy" data-id="${update.id}" title="Copy update text to clipboard">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
                     <!-- Direct single Tweet button -->
                     <button class="btn-card-tweet" data-id="${update.id}" title="Tweet about this update">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -369,6 +379,13 @@ function renderUpdatesList() {
         `;
 
         // Register action listeners on the newly created elements
+        card.querySelector('.btn-card-copy').addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(update.content_text)
+                .then(() => showToast('Update copied to clipboard!', 'success'))
+                .catch(() => showToast('Failed to copy text.', 'error'));
+        });
+
         card.querySelector('.btn-card-tweet').addEventListener('click', (e) => {
             e.stopPropagation();
             openComposerModal([update.id]);
@@ -708,4 +725,43 @@ function showToast(message, type = 'info') {
             toast.remove();
         }, 350);
     }, 4000);
+}
+
+// Export current filtered updates to CSV
+function exportToCSV() {
+    if (state.filteredUpdates.length === 0) {
+        showToast('No updates to export.', 'error');
+        return;
+    }
+
+    const headers = ['ID', 'Date', 'Category', 'Link', 'Content'];
+    const rows = state.filteredUpdates.map(u => [
+        u.id,
+        u.date,
+        u.category,
+        u.link,
+        u.content_text
+    ]);
+
+    // Construct CSV string, handling double quotes and commas
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(field => {
+            const escaped = String(field).replace(/"/g, '""');
+            return `"${escaped}"`;
+        }).join(','))
+    ].join('\r\n');
+
+    // Create download link and trigger it
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bigquery_release_notes_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast(`Exported ${state.filteredUpdates.length} updates to CSV!`, 'success');
 }

@@ -681,6 +681,28 @@ body {
     color: #1da1f2; /* Twitter color on hover */
 }
 
+/* Copy Button on Cards */
+.btn-card-copy {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-card-copy:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-hover);
+    color: var(--badge-feature-bg); /* Matches Emerald/Green on hover */
+}
+
 /* Card Content HTML Formatting */
 .card-body {
     font-size: 15px;
