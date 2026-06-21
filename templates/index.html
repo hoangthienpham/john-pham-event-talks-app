@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer</title>
+    <meta name="description" content="A beautiful dashboard to explore, search, filter, and share Google BigQuery release notes in real time.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-layout">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-container">
+                <div class="logo-area">
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#logo-grad-1)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                                <linearGradient id="logo-grad-1" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#4285F4"/>
+                                    <stop offset="1" stop-color="#34A853"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>BigQuery <span>Release Notes</span></h1>
+                        <p class="subtitle">Stay updated with the latest Google BigQuery features & announcements</p>
+                    </div>
+                </div>
+
+                <!-- Global Controls -->
+                <div class="global-controls">
+                    <!-- Last Updated Indicator -->
+                    <div class="update-status" id="update-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Loading...</span>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button id="btn-refresh" class="btn btn-secondary btn-icon" title="Refresh Release Notes">
+                        <svg class="icon-refresh" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                        <span>Refresh</span>
+                    </button>
+
+                    <!-- Theme Toggle -->
+                    <button id="btn-theme-toggle" class="btn btn-icon-only btn-circle" title="Toggle Light/Dark Theme">
+                        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <div class="dashboard-container">
+                
+                <!-- Sidebar (Filters & Search) -->
+                <aside class="dashboard-sidebar">
+                    <div class="sidebar-card">
+                        <h2>Filter & Search</h2>
+                        
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="search-input" placeholder="Search keywords..." autocomplete="off">
+                            <button id="search-clear" class="search-clear-btn" style="display: none;">&times;</button>
+                        </div>
+
+                        <!-- Category Filters -->
+                        <div class="filter-group">
+                            <label>Categories</label>
+                            <div class="category-pills" id="category-pills">
+                                <button class="pill active" data-category="all">
+                                    <span class="pill-dot" style="background-color: var(--color-primary);"></span>
+                                    All Updates
+                                    <span class="count-badge" id="count-all">0</span>
+                                </button>
+                                <button class="pill" data-category="Feature">
+                                    <span class="pill-dot" style="background-color: var(--badge-feature-bg);"></span>
+                                    Features
+                                    <span class="count-badge" id="count-feature">0</span>
+                                </button>
+                                <button class="pill" data-category="Announcement">
+                                    <span class="pill-dot" style="background-color: var(--badge-announcement-bg);"></span>
+                                    Announcements
+                                    <span class="count-badge" id="count-announcement">0</span>
+                                </button>
+                                <button class="pill" data-category="Issue">
+                                    <span class="pill-dot" style="background-color: var(--badge-issue-bg);"></span>
+                                    Issues
+                                    <span class="count-badge" id="count-issue">0</span>
+                                </button>
+                                <button class="pill" data-category="Deprecated">
+                                    <span class="pill-dot" style="background-color: var(--badge-deprecated-bg);"></span>
+                                    Deprecated
+                                    <span class="count-badge" id="count-deprecated">0</span>
+                                </button>
+                                <button class="pill" data-category="Change">
+                                    <span class="pill-dot" style="background-color: var(--badge-change-bg);"></span>
+                                    Changes
+                                    <span class="count-badge" id="count-change">0</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sort Toggle -->
+                        <div class="filter-group">
+                            <label>Sort Order</label>
+                            <div class="sort-selector">
+                                <select id="sort-order" class="select-control">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Stats Box -->
+                        <div class="stats-box">
+                            <div class="stat-item">
+                                <div class="stat-val" id="stat-total">0</div>
+                                <div class="stat-lbl">Total Cached</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-val" id="stat-showing">0</div>
+                                <div class="stat-lbl">Matching</div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <section class="dashboard-content">
+                    
+                    <!-- Loading Skeleton -->
+                    <div id="loading-skeleton" class="skeleton-container" style="display: none;">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="error-alert" class="alert alert-danger" style="display: none;">
+                        <div class="alert-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="alert-content">
+                            <h3 class="alert-title">Connection Error</h3>
+                            <p class="alert-message" id="error-message">Could not fetch release notes. Please check your internet connection and try again.</p>
+                            <button id="btn-retry" class="btn btn-primary btn-sm" style="margin-top: 10px;">Retry Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="empty-state" style="display: none;">
+                        <div class="empty-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                <line x1="8" y1="11" x2="14" y2="11"/>
+                            </svg>
+                        </div>
+                        <h3>No release notes found</h3>
+                        <p>No updates match your search query or selected category filter.</p>
+                        <button id="btn-clear-filters" class="btn btn-secondary btn-sm">Clear Search & Filters</button>
+                    </div>
+
+                    <!-- Release Notes List -->
+                    <div id="notes-container" class="notes-feed">
+                        <!-- Dynamic content injected here -->
+                    </div>
+
+                </section>
+            </div>
+        </main>
+
+        <!-- Toast Notifications Container -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- Selection Banner (Sticky bottom drawer that appears when items are selected) -->
+        <div id="selection-banner" class="selection-banner">
+            <div class="selection-banner-container">
+                <div class="selection-info">
+                    <span class="selection-count-badge" id="selection-count">0</span>
+                    <span class="selection-text">updates selected to tweet</span>
+                </div>
+                <div class="selection-actions">
+                    <button id="btn-clear-selection" class="btn btn-tertiary">Clear</button>
+                    <button id="btn-compose-selected" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span>Compose Tweet Thread / Summary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tweet Composer Modal -->
+        <div id="composer-modal" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div class="modal-title-area">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <h2>Compose Tweet</h2>
+                    </div>
+                    <button id="btn-close-composer" class="btn-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Templates Selector -->
+                    <div class="template-selector-group">
+                        <label class="form-label">Select Style Template</label>
+                        <div class="template-options">
+                            <button class="template-btn active" data-style="announcement">
+                                📢 Announcement
+                            </button>
+                            <button class="template-btn" data-style="tech-detail">
+                                💡 Technical Detail
+                            </button>
+                            <button class="template-btn" data-style="short-summary">
+                                ⚡ Short Summary
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Text Area for Tweet -->
+                    <div class="textarea-wrapper">
+                        <textarea id="tweet-text" rows="8" placeholder="What's happening?"></textarea>
+                    </div>
+
+                    <!-- Live Character Counter & Status -->
+                    <div class="composer-status-row">
+                        <div class="character-progress-container">
+                            <svg class="progress-ring" width="36" height="36">
+                                <circle class="progress-ring__circle-bg" stroke="var(--border-color)" stroke-width="3" fill="transparent" r="14" cx="18" cy="18"/>
+                                <circle class="progress-ring__circle" id="char-progress-circle" stroke="var(--color-primary)" stroke-width="3" fill="transparent" r="14" cx="18" cy="18"/>
+                            </svg>
+                            <span class="character-count" id="char-count">0 / 280</span>
+                        </div>
+                        <span class="composer-warning" id="composer-warning"></span>
+                    </div>
+
+                    <!-- Selection list (shows what notes are included) -->
+                    <div class="composer-source-notes">
+                        <h3>Included Updates:</h3>
+                        <div class="source-notes-list" id="composer-source-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-copy-tweet" class="btn btn-secondary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        <span>Copy Text</span>
+                    </button>
+                    <button id="btn-post-tweet" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span>Post to X</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
